@@ -43,7 +43,7 @@ button{border:0;border-radius:9px;padding:10px 16px;background:var(--brand);colo
 <header>
 <div class="topbar">
 <div><h1>CAPRI INSIGHTS</h1><p class="subtitle">Tableau de bord — Étude consommateurs</p></div>
-<div><div id="updated" class="updated">Dernière mise à jour : —</div><button id="refreshBtn">Actualiser</button></div>
+<div><div id="status" class="updated">Connexion Supabase : vérification…</div><div id="updated" class="updated">Dernière mise à jour : —</div><button id="refreshBtn">Actualiser</button></div>
 </div>
 </header>
 <div id="error" class="error"></div>
@@ -156,7 +156,8 @@ function renderComments(rows){
 async function loadDashboard(){
  const btn=document.getElementById('refreshBtn');btn.disabled=true;btn.textContent='Chargement…';setError('');
  try{
-  const {data,error}=await db.from('responses').select('*').order('submitted_at',{ascending:false});
+  let data, error;
+  ({data, error} = await db.from('responses').select('*').order('created_at',{ascending:false}));
   if(error) throw error;
   const rows=data||[];
     allRows=rows;
@@ -168,6 +169,7 @@ async function loadDashboard(){
   const nps=rows.map(r=>Number(r.q15)).filter(n=>Number.isFinite(n)&&n>=0&&n<=10);
   const npsAvg=nps.length?nps.reduce((a,b)=>a+b,0)/nps.length:null;
 
+  document.getElementById('status').textContent='Connexion Supabase : OK';
   document.getElementById('kpiTotal').textContent=rows.length;
   document.getElementById('kpiToday').textContent=todayCount;
   document.getElementById('kpiAge').textContent=ageAvg===null?'—':ageAvg.toFixed(1);
@@ -188,7 +190,12 @@ async function loadDashboard(){
   destroyChart('simplify');charts.simplify=new Chart(document.getElementById('simplifyChart'),{type:'doughnut',data:{labels:simpLabels,datasets:[{data:simpLabels.map(x=>sc[x])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
 
   renderComments(rows);
- }catch(err){console.error(err);setError("Impossible de charger le dashboard. Vérifiez la clé anon, les politiques RLS et la connexion Supabase.");}
+ }catch(err){
+  console.error('Dashboard Supabase error:', err);
+  const detail = err && (err.message || err.details || err.hint || err.code) ? [err.message, err.details, err.hint, err.code].filter(Boolean).join(' — ') : String(err);
+  document.getElementById('status').textContent='Connexion Supabase : ERREUR';
+  setError("Erreur Supabase : " + detail);
+}
  finally{btn.disabled=false;btn.textContent='Actualiser';}
 }
 document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
