@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capri Insights — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--brand:#2E4057;--brand-light:#f2f4f7;--border:#d8dce3;--text:#222;--muted:#666;--radius:14px}
+*{box-sizing:border-box} body{margin:0;background:#eef1f5;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 50px}
+header,.card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+header{padding:24px;margin-bottom:18px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;color:var(--brand);font-size:1.6rem}.subtitle{margin:6px 0 0;color:var(--muted)}
+button{border:0;border-radius:9px;padding:10px 16px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}.updated{font-size:.82rem;color:var(--muted);margin-bottom:6px;text-align:right}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card{padding:18px}.kpi-label{font-size:.82rem;color:var(--muted);margin-bottom:8px}.kpi-value{font-size:1.8rem;font-weight:700;color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:18px}.card h2{font-size:1rem;margin:0 0 14px;color:var(--brand)}
+.chart-wrap{position:relative;height:300px}.comments{overflow:auto;max-height:380px}.comment{border-top:1px solid var(--border);padding:12px 0}.comment:first-child{border-top:0}
+.comment-meta{font-size:.78rem;color:var(--muted);margin-bottom:5px}.comment-q{font-weight:600;color:var(--brand);font-size:.82rem}.comment-text{font-size:.92rem;white-space:pre-wrap}
+.empty{color:var(--muted);padding:18px 0}.error{color:#C0392B;background:#fdf2f2;padding:12px;border-radius:8px;margin-bottom:18px;display:none}
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:500px){.kpis{grid-template-columns:1fr}.wrap{padding:14px 10px 30px}.chart-wrap{height:260px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="topbar">
+<div><h1>CAPRI INSIGHTS</h1><p class="subtitle">Tableau de bord — Étude consommateurs</p></div>
+<div><div id="updated" class="updated">Dernière mise à jour : —</div><button id="refreshBtn">Actualiser</button></div>
+</div>
+</header>
+<div id="error" class="error"></div>
+
+<section class="kpis">
+<div class="card"><div class="kpi-label">Réponses</div><div class="kpi-value" id="kpiTotal">—</div></div>
+<div class="card"><div class="kpi-label">Aujourd’hui</div><div class="kpi-value" id="kpiToday">—</div></div>
+<div class="card"><div class="kpi-label">Âge moyen</div><div class="kpi-value" id="kpiAge">—</div></div>
+<div class="card"><div class="kpi-label">NPS moyen</div><div class="kpi-value" id="kpiNps">—</div></div>
+</section>
+
+<section class="grid">
+<div class="card"><h2>Répartition par sexe</h2><div class="chart-wrap"><canvas id="sexChart"></canvas></div></div>
+<div class="card"><h2>Répartition par âge</h2><div class="chart-wrap"><canvas id="ageChart"></canvas></div></div>
+<div class="card"><h2>Variante recommandée — Q12</h2><div class="chart-wrap"><canvas id="variantChart"></canvas></div></div>
+<div class="card"><h2>Simplifier la gamme — Q13</h2><div class="chart-wrap"><canvas id="simplifyChart"></canvas></div></div>
+</section>
+
+<section class="card"><h2>Derniers commentaires</h2><div class="comments" id="comments"></div></section>
+</div>
+
+<script>
+const SUPABASE_URL='https://ruduojzhlqkkmgxvjhqo.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1ZHVvanpobHFra21neHZqaHFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MTg5MjUsImV4cCI6MjEwMjI5NDkyNX0.LU1sHgVKo9P5cObQTAQYnMJV82ZHcxGSl2Y58Nkt8pk';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const charts={};
+
+function destroyChart(k){if(charts[k]) charts[k].destroy();}
+function setError(msg=''){const e=document.getElementById('error');e.textContent=msg;e.style.display=msg?'block':'none';}
+function countBy(rows,field,labels){const m={};labels.forEach(x=>m[x]=0);rows.forEach(r=>{const v=(r[field]??'').toString().trim();if(Object.prototype.hasOwnProperty.call(m,v))m[v]++;});return m;}
+function esc(v){return String(v??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+function formatDate(v){return new Date(v).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});}
+
+function renderComments(rows){
+ const box=document.getElementById('comments'), items=[];
+ rows.slice(0,10).forEach(r=>{
+  [['Q9',r.q9],['Q11',r.q11],['Q14',r.q14],['Q16',r.q16]].forEach(([q,t])=>{
+   if(t&&String(t).trim()) items.push('<div class="comment"><div class="comment-meta">'+formatDate(r.submitted_at||r.created_at)+' · '+(r.nom?esc(r.nom):'Répondant')+'</div><div class="comment-q">'+q+'</div><div class="comment-text">'+esc(t)+'</div></div>');
+  });
+ });
+ box.innerHTML=items.join('')||'<div class="empty">Aucun commentaire disponible.</div>';
+}
+
+async function loadDashboard(){
+ const btn=document.getElementById('refreshBtn');btn.disabled=true;btn.textContent='Chargement…';setError('');
+ try{
+  const {data,error}=await db.from('responses').select('*').order('submitted_at',{ascending:false});
+  if(error) throw error;
+  const rows=data||[];
+  const today=new Date().toLocaleDateString('fr-CA');
+  const todayCount=rows.filter(r=>new Date(r.submitted_at||r.created_at).toLocaleDateString('fr-CA')===today).length;
+  const ages=rows.map(r=>Number(r.age)).filter(n=>Number.isFinite(n)&&n>0);
+  const ageAvg=ages.length?ages.reduce((a,b)=>a+b,0)/ages.length:null;
+  const nps=rows.map(r=>Number(r.q15)).filter(n=>Number.isFinite(n)&&n>=0&&n<=10);
+  const npsAvg=nps.length?nps.reduce((a,b)=>a+b,0)/nps.length:null;
+
+  document.getElementById('kpiTotal').textContent=rows.length;
+  document.getElementById('kpiToday').textContent=todayCount;
+  document.getElementById('kpiAge').textContent=ageAvg===null?'—':ageAvg.toFixed(1);
+  document.getElementById('kpiNps').textContent=npsAvg===null?'—':npsAvg.toFixed(1);
+  document.getElementById('updated').textContent='Dernière mise à jour : '+new Date().toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'medium'});
+
+  const sexLabels=['Homme','Femme','Autre','Préfère ne pas répondre'], sex=countBy(rows,'sexe',sexLabels);
+  destroyChart('sex');charts.sex=new Chart(document.getElementById('sexChart'),{type:'doughnut',data:{labels:sexLabels,datasets:[{data:sexLabels.map(x=>sex[x])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+  const ageLabels=['0–17','18–25','26–35','36–45','46–60','61+'], age={};ageLabels.forEach(x=>age[x]=0);
+  ages.forEach(n=>{const k=n<18?'0–17':n<=25?'18–25':n<=35?'26–35':n<=45?'36–45':n<=60?'46–60':'61+';age[k]++;});
+  destroyChart('age');charts.age=new Chart(document.getElementById('ageChart'),{type:'bar',data:{labels:ageLabels,datasets:[{label:'Répondants',data:ageLabels.map(x=>age[x])}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});
+
+  const variants=['Rouge','Jaune','Vert','Bleu'], vc=countBy(rows,'q12',variants);
+  destroyChart('variant');charts.variant=new Chart(document.getElementById('variantChart'),{type:'bar',data:{labels:variants,datasets:[{label:'Recommandations',data:variants.map(x=>vc[x])}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}});
+
+  const simpLabels=['Oui','Non','Sans avis'], sc=countBy(rows,'q13',simpLabels);
+  destroyChart('simplify');charts.simplify=new Chart(document.getElementById('simplifyChart'),{type:'doughnut',data:{labels:simpLabels,datasets:[{data:simpLabels.map(x=>sc[x])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+  renderComments(rows);
+ }catch(err){console.error(err);setError("Impossible de charger le dashboard. Vérifiez la clé anon, les politiques RLS et la connexion Supabase.");}
+ finally{btn.disabled=false;btn.textContent='Actualiser';}
+}
+document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
+loadDashboard();
+</script>
+</body>
+</html>

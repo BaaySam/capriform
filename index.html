@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Étude de marché — Gamme Capri</title>
+<style>
+  :root{
+    --brand:#2E4057;
+    --brand-light:#f2f4f7;
+    --border:#d8dce3;
+    --text:#222;
+    --muted:#666;
+    --rouge:#C0392B;
+    --jaune:#D4A017;
+    --vert:#27AE60;
+    --bleu:#2E77B8;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#eef1f5;
+    color:var(--text);
+    margin:0;
+    padding:24px 12px 80px;
+    line-height:1.5;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+  .card{
+    background:#fff;
+    border-radius:var(--radius);
+    box-shadow:0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    padding:28px 24px;
+    margin-bottom:18px;
+  }
+  header.card{text-align:center;padding:32px 24px;}
+  h1{font-size:1.5rem;color:var(--brand);margin:0 0 6px;}
+  .subtitle{color:var(--muted);font-size:.95rem;margin:0;}
+  .intro{font-size:.9rem;color:var(--muted);font-style:italic;margin-top:14px;text-align:left;}
+  .section-title{
+    background:var(--brand);
+    color:#fff;
+    padding:10px 16px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:1rem;
+    margin:0 0 18px;
+  }
+  .q{margin-bottom:22px;}
+  .q:last-child{margin-bottom:0;}
+  .q-label{font-weight:600;font-size:.96rem;margin-bottom:8px;display:block;}
+  .q-num{color:var(--brand);margin-right:4px;}
+  .options{display:flex;flex-wrap:wrap;gap:8px 18px;}
+  .option{display:flex;align-items:center;gap:6px;font-size:.92rem;}
+  .option input{width:16px;height:16px;accent-color:var(--brand);cursor:pointer;}
+  textarea{
+    width:100%;
+    min-height:64px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:.92rem;
+    resize:vertical;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 12px;
+    font-family:inherit;
+    font-size:.92rem;
+  }
+  .id-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .id-grid .full{grid-column:1 / -1;}
+  .id-grid label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px;}
+  @media (max-width:560px){.id-grid{grid-template-columns:1fr;}}
+
+  table.matrix{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:4px;}
+  table.matrix th, table.matrix td{border:1px solid var(--border);text-align:center;padding:8px 4px;}
+  table.matrix th{background:var(--brand-light);font-weight:600;font-size:.8rem;}
+  table.matrix td.variant-cell{text-align:left;font-weight:600;padding-left:10px;}
+  table.matrix td.variant-cell .swatch{
+    display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle;
+  }
+  table.matrix input[type=radio]{width:16px;height:16px;accent-color:var(--brand);cursor:pointer;}
+
+  .nps{display:flex;justify-content:space-between;gap:2px;flex-wrap:wrap;}
+  .nps .option{flex-direction:column;gap:4px;font-size:.8rem;}
+  .nps-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px;}
+
+  .other-text{margin-top:8px;}
+
+  button.submit{
+    width:100%;
+    background:var(--brand);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:14px;
+    font-size:1rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.submit:hover{opacity:.92;}
+  .required-note{font-size:.78rem;color:var(--muted);margin-top:10px;text-align:center;}
+
+  #thankyou{display:none;text-align:center;padding:48px 24px;}
+  #thankyou h2{color:var(--brand);}
+  #thankyou button{
+    margin-top:16px;
+    background:var(--brand);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:10px 20px;
+    font-size:.92rem;
+    cursor:pointer;
+  }
+  .error-msg{color:var(--rouge);font-size:.8rem;margin-top:6px;display:none;}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="card">
+    <h1>ÉTUDE DE MARCHÉ — GAMME CAPRI</h1>
+    <p class="subtitle">Questionnaire Consommateurs — Perception des 4 variantes (Rouge, Jaune, Vert, Bleu)</p>
+    <p class="intro">La gamme Capri se compose de 4 variantes : Rouge, Jaune, Vert et Bleu. Ce questionnaire vise à comprendre votre perception de chacune d'entre elles. Vos réponses resteront confidentielles.</p>
+  </header>
+
+  <form id="capriForm">
+    <div class="card">
+      <div class="id-grid">
+        <div class="full">
+          <label for="nom">Nom du répondant (optionnel)</label>
+          <input type="text" id="nom" name="nom">
+        </div>
+        <div>
+          <label for="age">Âge</label>
+          <input type="number" id="age" name="age" min="0" max="120">
+        </div>
+        <div>
+          <label for="sexe">Sexe</label>
+          <select id="sexe" name="sexe" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:.92rem;">
+            <option value=""></option>
+            <option>Homme</option>
+            <option>Femme</option>
+            <option>Autre</option>
+            <option>Préfère ne pas répondre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION A -->
+    <div class="card">
+      <p class="section-title">A. Connaissance et usage de la gamme</p>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">1.</span>Connaissiez-vous l'existence des 4 variantes de la gamme Capri avant cette enquête ?</span>
+        <div class="options">
+          <label class="option"><input type="radio" name="q1" value="Oui, les 4" required>Oui, les 4</label>
+          <label class="option"><input type="radio" name="q1" value="Oui, certaines seulement">Oui, certaines seulement</label>
+          <label class="option"><input type="radio" name="q1" value="Non, aucune">Non, aucune</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">2.</span>Parmi les variantes suivantes, lesquelles avez-vous déjà vues en rayon, en ligne ou sur le marché ?</span>
+        <div class="options" id="q2">
+          <label class="option"><input type="checkbox" name="q2" value="Rouge">Rouge</label>
+          <label class="option"><input type="checkbox" name="q2" value="Jaune">Jaune</label>
+          <label class="option"><input type="checkbox" name="q2" value="Vert">Vert</label>
+          <label class="option"><input type="checkbox" name="q2" value="Bleu">Bleu</label>
+          <label class="option"><input type="checkbox" name="q2" value="Aucune">Aucune</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">3.</span>Parmi les variantes suivantes, lesquelles avez-vous déjà essayées ou achetées ?</span>
+        <div class="options" id="q3">
+          <label class="option"><input type="checkbox" name="q3" value="Rouge">Rouge</label>
+          <label class="option"><input type="checkbox" name="q3" value="Jaune">Jaune</label>
+          <label class="option"><input type="checkbox" name="q3" value="Vert">Vert</label>
+          <label class="option"><input type="checkbox" name="q3" value="Bleu">Bleu</label>
+          <label class="option"><input type="checkbox" name="q3" value="Aucune">Aucune</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">4.</span>Quelle est la variante que vous achetez ou utilisez le plus souvent ?</span>
+        <div class="options">
+          <label class="option"><input type="radio" name="q4" value="Rouge">Rouge</label>
+          <label class="option"><input type="radio" name="q4" value="Jaune">Jaune</label>
+          <label class="option"><input type="radio" name="q4" value="Vert">Vert</label>
+          <label class="option"><input type="radio" name="q4" value="Bleu">Bleu</label>
+          <label class="option"><input type="radio" name="q4" value="Aucune">Aucune</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION B -->
+    <div class="card">
+      <p class="section-title">B. Évaluation comparative des 4 variantes</p>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">5.</span>Pour chaque variante déjà essayée, quelle note globale lui donneriez-vous ?</span>
+        <div id="grid-q5"></div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">6.</span>Pour chaque variante, seriez-vous prêt(e) à la racheter ?</span>
+        <div id="grid-q6"></div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">7.</span>Pour chaque variante, l'odeur correspondait-elle à ce que vous attendiez en voyant la couleur du flacon ?</span>
+        <div id="grid-q7"></div>
+      </div>
+    </div>
+
+    <!-- SECTION C -->
+    <div class="card">
+      <p class="section-title">C. Le Jaune — ce qui fonctionne</p>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">8.</span>Si vous utilisez ou préférez le Jaune, qu'est-ce qui vous plaît le plus dans cette variante ? (plusieurs réponses possibles)</span>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q8" value="L'odeur">L'odeur</label>
+          <label class="option"><input type="checkbox" name="q8" value="La couleur / le packaging">La couleur / le packaging</label>
+          <label class="option"><input type="checkbox" name="q8" value="La tenue">La tenue</label>
+          <label class="option"><input type="checkbox" name="q8" value="Le prix">Le prix</label>
+          <label class="option"><input type="checkbox" name="q8" value="L'habitude">L'habitude</label>
+          <label class="option"><input type="checkbox" name="q8" value="Autre" id="q8-autre-chk">Autre</label>
+        </div>
+        <div class="other-text" id="q8-autre-wrap" style="display:none;">
+          <input type="text" id="q8-autre-text" placeholder="Précisez...">
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">9.</span>Qu'est-ce qui distingue, selon vous, le Jaune des autres variantes de la gamme ?</span>
+        <textarea name="q9"></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION D -->
+    <div class="card">
+      <p class="section-title">D. Rouge, Vert, Bleu — freins identifiés</p>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">10.</span>Si vous n'avez jamais essayé le Rouge, le Vert ou le Bleu, pourquoi ?</span>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q10" value="Je ne savais pas qu'elles existaient">Je ne savais pas qu'elles existaient</label>
+          <label class="option"><input type="checkbox" name="q10" value="Pas disponibles au marché">Pas disponibles au marché</label>
+          <label class="option"><input type="checkbox" name="q10" value="L'odeur ne m'attirait pas">L'odeur ne m'attirait pas</label>
+          <label class="option"><input type="checkbox" name="q10" value="Le packaging n'était pas attractif">Le packaging n'était pas attractif</label>
+          <label class="option"><input type="checkbox" name="q10" value="Je préfère rester sur le Jaune">Je préfère rester sur le Jaune</label>
+          <label class="option"><input type="checkbox" name="q10" value="Autre" id="q10-autre-chk">Autre</label>
+        </div>
+        <div class="other-text" id="q10-autre-wrap" style="display:none;">
+          <input type="text" id="q10-autre-text" placeholder="Précisez...">
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">11.</span>Si vous avez essayé l'une de ces variantes sans la racheter, quelle en est la principale raison ?</span>
+        <textarea name="q11"></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION E -->
+    <div class="card">
+      <p class="section-title">E. Bilan et avenir de la gamme</p>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">12.</span>Si la marque devait concentrer ses efforts sur une seule variante, laquelle recommanderiez-vous ?</span>
+        <div class="options">
+          <label class="option"><input type="radio" name="q12" value="Rouge">Rouge</label>
+          <label class="option"><input type="radio" name="q12" value="Jaune">Jaune</label>
+          <label class="option"><input type="radio" name="q12" value="Vert">Vert</label>
+          <label class="option"><input type="radio" name="q12" value="Bleu">Bleu</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">13.</span>Verriez-vous un intérêt à ce que la marque simplifie la gamme (par exemple en ne gardant que le Jaune) ?</span>
+        <div class="options">
+          <label class="option"><input type="radio" name="q13" value="Oui">Oui</label>
+          <label class="option"><input type="radio" name="q13" value="Non">Non</label>
+          <label class="option"><input type="radio" name="q13" value="Sans avis">Sans avis</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">14.</span>Qu'est-ce qui pourrait, selon vous, redonner de l'attrait aux variantes Rouge, Vert et Bleu ?</span>
+        <textarea name="q14"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">15.</span>Sur une échelle de 0 à 10, recommanderiez-vous la gamme Capri en général à un proche ?</span>
+        <div class="nps" id="nps15"></div>
+        <div class="nps-labels"><span>Pas du tout probable</span><span>Extrêmement probable</span></div>
+      </div>
+
+      <div class="q">
+        <span class="q-label"><span class="q-num">16.</span>Avez-vous d'autres commentaires sur la gamme Capri ?</span>
+        <textarea name="q16"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <button type="submit" class="submit">Envoyer mes réponses</button>
+      <p class="required-note">Vos réponses sont envoyées directement dans une feuille Google Sheets centralisée.</p>
+      <p class="error-msg" id="submitError"></p>
+    </div>
+  </form>
+
+  <div class="card" id="thankyou">
+    <h2>Merci pour votre participation à cette étude !</h2>
+    <p>Vos réponses ont été enregistrées.</p>
+    <button id="resetBtn">Répondre pour une autre personne</button>
+  </div>
+
+</div>
+
+<script>
+// ⚠️ CONFIGURATION — à faire une seule fois :
+// 1. Déployer le script "recevoir_reponses_capri.gs" comme application Web
+//    (voir les instructions en tête de ce fichier .gs)
+// 2. Coller ci-dessous l'URL de l'application Web obtenue (elle se termine par /exec)
+// Tant que cette URL n'est pas renseignée, le formulaire télécharge simplement
+// un fichier CSV local à chaque envoi (mode secours).
+const SUPABASE_URL = 'https://ruduojzhlqkkmgxvjhqo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1ZHVvanpobHFra21neHZqaHFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MTg5MjUsImV4cCI6MjEwMjI5NDkyNX0.LU1sHgVKo9P5cObQTAQYnMJV82ZHcxGSl2Y58Nkt8pk';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const VARIANTS = [
+  {key:'rouge', label:'Rouge', hex:'#C0392B'},
+  {key:'jaune', label:'Jaune', hex:'#D4A017'},
+  {key:'vert',  label:'Vert',  hex:'#27AE60'},
+  {key:'bleu',  label:'Bleu',  hex:'#2E77B8'},
+];
+
+function buildGrid(containerId, name, columns){
+  const el = document.getElementById(containerId);
+  let html = '<table class="matrix"><thead><tr><th style="text-align:left;">Variante</th>';
+  columns.forEach(c => html += `<th>${c}</th>`);
+  html += '</tr></thead><tbody>';
+  VARIANTS.forEach(v => {
+    html += `<tr><td class="variant-cell"><span class="swatch" style="background:${v.hex}"></span>${v.label}</td>`;
+    columns.forEach(c => {
+      html += `<td><input type="radio" name="${name}_${v.key}" value="${c}"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+buildGrid('grid-q5', 'q5', ['Non essayé','1','2','3','4','5']);
+buildGrid('grid-q6', 'q6', ['Oui','Non',"N'a pas essayé"]);
+buildGrid('grid-q7', 'q7', ['Oui','Non','Sans avis / N\'a pas essayé']);
+
+// NPS 0-10
+(function(){
+  const el = document.getElementById('nps15');
+  let html = '';
+  for(let i=0;i<=10;i++){
+    html += `<label class="option"><input type="radio" name="q15" value="${i}">${i}</label>`;
+  }
+  el.innerHTML = html;
+})();
+
+// "Autre" toggle fields
+function wireOther(chkId, wrapId){
+  const chk = document.getElementById(chkId);
+  const wrap = document.getElementById(wrapId);
+  chk.addEventListener('change', () => { wrap.style.display = chk.checked ? 'block' : 'none'; });
+}
+wireOther('q8-autre-chk','q8-autre-wrap');
+wireOther('q10-autre-chk','q10-autre-wrap');
+
+const form = document.getElementById('capriForm');
+form.addEventListener('submit', async function(e){
+  e.preventDefault();
+
+  const fd = new FormData(form);
+  const get = (name) => fd.get(name) || '';
+  const getAll = (name) => fd.getAll(name).join('; ');
+
+  let q8val = getAll('q8');
+  const q8autre = document.getElementById('q8-autre-text').value.trim();
+  if(q8autre) q8val = (q8val ? q8val + '; ' : '') + 'Autre: ' + q8autre;
+
+  let q10val = getAll('q10');
+  const q10autre = document.getElementById('q10-autre-text').value.trim();
+  if(q10autre) q10val = (q10val ? q10val + '; ' : '') + 'Autre: ' + q10autre;
+  
+const device =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? "Mobile"
+        : "Desktop";
+
+const browser = (() => {
+    const ua = navigator.userAgent;
+
+    if (ua.includes("Edg")) return "Edge";
+    if (ua.includes("Chrome")) return "Chrome";
+    if (ua.includes("Firefox")) return "Firefox";
+    if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+
+    return "Autre";
+})();
+
+  const row = {
+    'Horodatage': new Date().toISOString(),
+    'Nom (optionnel)': get('nom'),
+    'Âge': get('age'),
+    'Sexe': get('sexe'),
+    'Q1 - Connaissance des 4 variantes': get('q1'),
+    'Q2 - Variantes vues': getAll('q2'),
+    'Q3 - Variantes essayées': getAll('q3'),
+    'Q4 - Variante la plus utilisée': get('q4'),
+  };
+  VARIANTS.forEach(v => row[`Q5 - Note ${v.label}`] = get('q5_' + v.key));
+  VARIANTS.forEach(v => row[`Q6 - Rachat ${v.label}`] = get('q6_' + v.key));
+  VARIANTS.forEach(v => row[`Q7 - Odeur/couleur ${v.label}`] = get('q7_' + v.key));
+  Object.assign(row, {
+    'Q8 - Attraits du Jaune': q8val,
+    'Q9 - Ce qui distingue le Jaune': get('q9'),
+    'Q10 - Freins Rouge/Vert/Bleu': q10val,
+    'Q11 - Raison de non-rachat': get('q11'),
+    'Q12 - Variante à privilégier': get('q12'),
+    'Q13 - Simplifier la gamme': get('q13'),
+    'Q14 - Comment redonner de l\'attrait': get('q14'),
+    'Q15 - NPS gamme Capri (0-10)': get('q15'),
+    'Q16 - Commentaires libres': get('q16'),
+  });
+
+  const errorEl = document.getElementById('submitError');
+  errorEl.style.display = 'none';
+
+  
+
+  const submitBtn = form.querySelector('button.submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Envoi en cours...';
+
+  try {
+    await supabaseClient.from('responses').insert([{
+      nom: row['Nom (optionnel)'],
+      age: row['Âge'] ? Number(row['Âge']) : null,
+      sexe: row['Sexe'],
+	  device: device,
+	  browser: browser,
+      q1: row['Q1 - Connaissance des 4 variantes'],
+      q2: row['Q2 - Variantes vues'],
+      q3: row['Q3 - Variantes essayées'],
+      q4: row['Q4 - Variante la plus utilisée'],
+      q5_rouge: row['Q5 - Note Rouge'],
+      q5_jaune: row['Q5 - Note Jaune'],
+      q5_vert: row['Q5 - Note Vert'],
+      q5_bleu: row['Q5 - Note Bleu'],
+      q6_rouge: row['Q6 - Rachat Rouge'],
+      q6_jaune: row['Q6 - Rachat Jaune'],
+      q6_vert: row['Q6 - Rachat Vert'],
+      q6_bleu: row['Q6 - Rachat Bleu'],
+      q7_rouge: row['Q7 - Odeur/couleur Rouge'],
+      q7_jaune: row['Q7 - Odeur/couleur Jaune'],
+      q7_vert: row['Q7 - Odeur/couleur Vert'],
+      q7_bleu: row['Q7 - Odeur/couleur Bleu'],
+      q8: row['Q8 - Attraits du Jaune'],
+      q9: row['Q9 - Ce qui distingue le Jaune'],
+      q10: row['Q10 - Freins Rouge/Vert/Bleu'],
+      q11: row['Q11 - Raison de non-rachat'],
+      q12: row['Q12 - Variante à privilégier'],
+      q13: row['Q13 - Simplifier la gamme'],
+      q14: row["Q14 - Comment redonner de l'attrait"],
+      q15: row['Q15 - NPS gamme Capri (0-10)'] ? Number(row['Q15 - NPS gamme Capri (0-10)']) : null,
+      q16: row['Q16 - Commentaires libres']
+    }]);
+    form.style.display = 'none';
+    document.getElementById('thankyou').style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch (err) {
+    console.error('Envoi vers Google Sheets impossible :', err);
+    errorEl.textContent = "L'envoi a échoué (connexion internet indisponible ?). Merci de réessayer.";
+    errorEl.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Envoyer mes réponses';
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  form.reset();
+  document.getElementById('q8-autre-wrap').style.display = 'none';
+  document.getElementById('q10-autre-wrap').style.display = 'none';
+  document.getElementById('q8-autre-text').value = '';
+  document.getElementById('q10-autre-text').value = '';
+  document.getElementById('thankyou').style.display = 'none';
+  form.style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+</script>
+</body>
+</html>
