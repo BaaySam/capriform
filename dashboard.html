@@ -77,6 +77,12 @@ button{border:0;border-radius:9px;padding:10px 16px;background:var(--brand);colo
 <section class="card"><h2>Derniers commentaires</h2><div class="comments" id="comments"></div></section>
 </div>
 
+<div class="modal-backdrop" id="responseModal">
+<div class="modal">
+<div class="modal-head"><h2 id="modalTitle">Fiche répondant</h2><button id="closeModal">Fermer</button></div>
+<div id="modalAnswers" class="answer-grid"></div>
+<div style="margin-top:16px;text-align:right"><button id="printResponse">Imprimer la fiche</button></div>
+</div></div>
 <script>
 const SUPABASE_URL='https://ruduojzhlqkkmgxvjhqo.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1ZHVvanpobHFra21neHZqaHFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MTg5MjUsImV4cCI6MjEwMjI5NDkyNX0.LU1sHgVKo9P5cObQTAQYnMJV82ZHcxGSl2Y58Nkt8pk';
@@ -202,12 +208,4 @@ document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
 loadDashboard();
 </script>
 
-<div class="modal-backdrop" id="responseModal">
-<div class="modal">
-<div class="modal-head"><h2 id="modalTitle">Fiche répondant</h2><button id="closeModal">Fermer</button></div>
-<div id="modalAnswers" class="answer-grid"></div>
-<div style="margin-top:16px;text-align:right"><button id="printResponse">Imprimer la fiche</button></div>
-</div></div>
-
-</body>
-</html>
+</body></html>
